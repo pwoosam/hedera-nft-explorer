@@ -67,6 +67,10 @@ export const executeWithRetriesAsync = async <T>(func: (retryNum: number) => Pro
 export const getMetadataObj = async (metadata: string) => {
   let metadataIpfs = decodeBase64(metadata);
 
+  if (!metadataIpfs || metadataIpfs.length <= 20) {
+    throw new Error("NFT Metadata is invalid");
+  }
+
   if (!metadataIpfs.startsWith('ipfs://') && !metadataIpfs.startsWith('https://')) {
     metadataIpfs = `ipfs://${metadataIpfs}`;
   }
