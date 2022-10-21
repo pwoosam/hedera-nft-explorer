@@ -1,18 +1,19 @@
 import { AppBar, Button, CircularProgress, Link, TextField, Toolbar, Typography } from "@mui/material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { alpha } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
 import { actions, AppStore } from "../../store";
 import { getIdType, IdType } from "../../services/id-identifier";
 import { getAccountIdFromDomain } from "../../services/domain-service";
 import { SupportButton } from "../hashconnect/support";
-import theme from "../../theme";
 
 export const Navbar = () => {
   const searchQuery = useSelector((state: AppStore) => state.page.searchQuery);
   const isLoading = useSelector((state: AppStore) => state.page.isLoading);
-  const navigate = useNavigate();
 
+  const theme = useTheme();
+
+  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   return (
