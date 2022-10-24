@@ -1,13 +1,21 @@
-import { Alert, Box, Grid, Pagination, Snackbar, Stack } from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { Alert, Box, Chip, CircularProgress, Grid, Pagination, Snackbar, Stack, Typography } from "@mui/material";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 import { listAllAccountNftsWithMetadata, NftWithMetadata } from "../api-clients/hedera-mirror-node-api-helper";
 import { NftSquare } from "../components/nfts/nft-square";
+import { getDomainsForAccount } from "../services/domain-service";
 import { actions } from "../store";
+
+interface AccountDomainInfo {
+  tld: string,
+  domains: string[]
+}
 
 export const Account = () => {
   const [nfts, setNfts] = useState<NftWithMetadata[]>([]);
+  const [accountDomains, setAccountDomains] = useState<AccountDomainInfo[]>([]);
+  const [loadingDomains, setLoadingDomains] = useState<boolean>(false);
   const [err, setErr] = useState('');
   const dispatch = useDispatch();
 
@@ -41,6 +49,31 @@ export const Account = () => {
     });
   }, [id, idRef, dispatch]);
 
+  useEffect(() => {
+    setLoadingDomains(true);
+    getDomainsForAccount(id).then(domains => {
+      const domainsWithTld = domains.sort().map(d => ({
+        domain: d,
+        tld: d.split('.').reverse()[0]
+      }));
+      const accountDomainsTemp: AccountDomainInfo[] = [];
+      for (const domainWithTld of domainsWithTld) {
+        const index = accountDomainsTemp.findIndex(o => o.tld === domainWithTld.tld);
+        if (index === -1) {
+          accountDomainsTemp.push({
+            tld: domainWithTld.tld,
+            domains: [domainWithTld.domain]
+          });
+        } else {
+          accountDomainsTemp[index].domains.push(domainWithTld.domain);
+        }
+      }
+      setAccountDomains(accountDomainsTemp.sort((a, b) => a.tld.localeCompare(b.tld)));
+    }).finally(() => {
+      setLoadingDomains(false);
+    });
+  }, [id]);
+
   const itemsPerPage = 12;
   const pages = Math.ceil(nfts.length / itemsPerPage);
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,6 +94,48 @@ export const Account = () => {
           {err}
         </Alert>
       </Snackbar>
+      <Box>
+        <Typography
+          variant="h2"
+        >
+          Domains
+        </Typography>
+        {loadingDomains && <CircularProgress color="primary" />}
+        {(!loadingDomains && accountDomains.length > 0) && (
+          accountDomains.map(domainsPerTld => {
+            return (
+              <Fragment key={domainsPerTld.tld}>
+                <Typography
+                  variant="h6"
+                >
+                  .{domainsPerTld.tld}
+                </Typography>
+                <Box display="flex" gap={0.5} flexWrap="wrap">
+                  {domainsPerTld.domains.map(domain => {
+                    return (
+                      <Chip
+                        key={domain}
+                        title={domain}
+                        label={domain}
+                      />
+                    );
+                  })}
+                </Box>
+              </Fragment>
+            );
+          })
+        )}
+        {(!loadingDomains && accountDomains.length === 0) && (
+          <Box>
+            None
+          </Box>
+        )}
+      </Box>
+      <Typography
+        variant="h2"
+      >
+        NFTs
+      </Typography>
       <Box>
         <Grid container spacing={1}>
           {nfts.slice(startIndex, endIndex).map((o) => {
