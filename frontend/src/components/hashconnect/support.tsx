@@ -6,6 +6,7 @@ import { getSigner, hc } from "./hashconnect-client";
 import { AppStore } from "../../store";
 import { Hbar, HbarUnit, TransferTransaction } from "@hashgraph/sdk";
 import { getAccountIdFromDomain } from "../../services/domain-service";
+import CoffeeIcon from '@mui/icons-material/Coffee';
 
 const devDomain = 'dev.hbar';
 
@@ -188,7 +189,7 @@ export const SupportButton = (props: ButtonProps) => {
         }}
         {...props}
       >
-        Support
+        <CoffeeIcon />
       </Button>
 
       <SupportModal

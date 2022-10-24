@@ -9,6 +9,7 @@ export const client = new HederaMirrorNodeAPIClient();
 
 export const ipfsGateways = [
   'https://ipfscdn-c7eyhsdeeff0crhj.z01.azurefd.net/ipfs/', // Please do not use this ipfs gateway for other projects; this is a paid gateway for NFT Explorer
+  // 'http://127.0.0.1:8080/ipfs/',
   // 'https://cloudflare-ipfs.com/ipfs/',
   // 'https://ipfs.io/ipfs/',
   // 'https://dweb.link/ipfs/',

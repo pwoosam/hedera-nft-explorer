@@ -96,35 +96,60 @@ export const NftSquare = (props: {
   const isVideo = useMemo(() => isVideoMetadata(props.nft.metadataObj) || imgTagErrored, [props.nft, imgTagErrored]);
   const srcUrl = useMemo(() => getUrlFromImageMetadata(props.nft.metadataObj), [props.nft]);
 
-  const hasAnyKeys = !!props.nft.tokenInfo.admin_key ||
+  const hasAnyKeys = useMemo(() => !!props.nft.tokenInfo.admin_key ||
     !!props.nft.tokenInfo.freeze_key ||
     !!props.nft.tokenInfo.supply_key ||
     !!props.nft.tokenInfo.pause_key ||
     !!props.nft.tokenInfo.fee_schedule_key ||
     !!props.nft.tokenInfo.kyc_key ||
-    !!props.nft.tokenInfo.wipe_key;
+    !!props.nft.tokenInfo.wipe_key,
+    [props.nft]);
 
   const shortDescriptionLength = 120;
-  let description = '';
-  if (props.nft.metadataObj && props.nft.metadataObj.description) {
-    const metadataDesc = props.nft.metadataObj.description;
-    if (typeof metadataDesc === "string") {
-      description = metadataDesc;
-    } else if (metadataDesc.description) {
-      description = metadataDesc.description;
-    } else if (metadataDesc) {
-      description = JSON.stringify(metadataDesc, null, 2);
+  const [description, isDescriptionLong] = useMemo(() => {
+    let description = '';
+    if (props.nft.metadataObj && props.nft.metadataObj.description) {
+      const metadataDesc = props.nft.metadataObj.description;
+      if (typeof metadataDesc === "string") {
+        description = metadataDesc;
+      } else if (metadataDesc.description) {
+        description = metadataDesc.description;
+      } else if (metadataDesc) {
+        description = JSON.stringify(metadataDesc, null, 2);
+      }
     }
-  }
-  const isDescriptionLong = description.length > shortDescriptionLength;
+    const isDescriptionLong = description.length > shortDescriptionLength;
+
+    return [description, isDescriptionLong];
+  }, [props.nft]);
+
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (ref.current) {
+      const measure = () => {
+        if (ref.current) {
+          setWidth(ref.current.clientWidth);
+        }
+      };
+
+      measure();
+      window.addEventListener("resize", measure);
+      return () => {
+        window.removeEventListener("resize", measure);
+      };
+    }
+  }, []);
 
   const cannotLoadImg = props.nft.tokenInfo.total_supply === "0" || srcUrl === "";
 
   return (
     <Card
+      ref={ref}
       sx={{
         position: "relative",
         width: "100%",
+        lineHeight: 0,
       }}
     >
       <CardHeader
@@ -133,38 +158,50 @@ export const NftSquare = (props: {
       />
       {(metadataLoadingErrMessage || cannotLoadImg) ? (
         <Box
+          width={width}
+          height={width}
           display="flex"
           alignItems="center"
           justifyContent="center"
-          width="100%"
-          height="100%"
         >
           <QuestionMarkIcon color="primary" fontSize="large" />
         </Box>
       ) : (isVideo ? (
         <video
+          width={width}
+          height={width}
           src={srcUrl}
           autoPlay
           playsInline
           loop
           muted
-          className="img-responsive"
+          className="img-contain"
         ></video>
       ) : (
         srcUrl.includes('.glb') ? (
-          <Box px={2}>.gbl not supported</Box>
+          <Box
+            width={width}
+            height={width}
+            px={2}
+          >
+            .gbl not supported
+          </Box>
           // <model-viewer
+          //   width={width}
+          //   height={width}
           //   alt={`NFT number ${props.nft.serial_number}`}
           //   src={srcUrl}
-          //   className="img-responsive"
+          //   className="img-contain"
           //   autoplay
           // ></model-viewer>
         ) : (
           <img
+            width={width}
+            height={width}
             alt={`NFT number ${props.nft.serial_number}`}
             {...props}
             src={srcUrl}
-            className="img-responsive"
+            className="img-contain"
             loading="lazy"
             onError={e => {
               setImgTagErrored(true);
