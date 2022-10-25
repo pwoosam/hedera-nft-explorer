@@ -5,6 +5,32 @@ import { useMediaQuery } from '@mui/material';
 import { useMemo } from 'react';
 
 const themeOptions: ThemeOptions = {
+  typography: {
+    h1: {
+      fontSize: '3rem',
+    },
+    h2: {
+      fontSize: '2.5rem',
+    },
+    h3: {
+      fontSize: '2rem',
+    },
+    h4: {
+      fontSize: '1.75rem',
+    },
+    h5: {
+      fontSize: '1.5rem',
+    },
+    h6: {
+      fontSize: '1.25rem',
+    },
+    subtitle1: {
+      fontSize: '0.9rem',
+    },
+    subtitle2: {
+      fontSize: '0.8rem',
+    },
+  },
   palette: {
     primary: {
       main: '#556cd6',

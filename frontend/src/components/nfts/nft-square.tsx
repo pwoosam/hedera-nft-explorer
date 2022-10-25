@@ -1,4 +1,4 @@
-import { Box, Button, Card, CardContent, CardHeader, Link, Chip, Popover, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Link, Chip, Popover, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { fromIpfsIdToUrl, fromIpfsProtocolToUrl, NftWithMetadata } from "../../api-clients/hedera-mirror-node-api-helper";
@@ -152,10 +152,6 @@ export const NftSquare = (props: {
         lineHeight: 0,
       }}
     >
-      <CardHeader
-        title={`${props.nft.tokenInfo.name}`}
-        subheader={`${props.nft.serial_number}/${props.nft.tokenInfo.total_supply}`}
-      />
       {(metadataLoadingErrMessage || cannotLoadImg) ? (
         <Box
           width={width}
@@ -214,6 +210,20 @@ export const NftSquare = (props: {
           lineHeight: 1,
         }}
       >
+        <Typography
+          variant="h6"
+          title={props.nft.tokenInfo.name}
+          noWrap
+        >
+          {props.nft.tokenInfo.name}
+        </Typography>
+        <Typography
+          variant="subtitle1"
+          lineHeight={1}
+          pb={1}
+        >
+          {`${props.nft.serial_number}/${props.nft.tokenInfo.total_supply}`}
+        </Typography>
         <Typography
           variant="h6"
         >
