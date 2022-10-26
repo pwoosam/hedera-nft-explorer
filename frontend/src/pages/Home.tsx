@@ -1,10 +1,11 @@
 import { Stack, Box, Grid, Pagination, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
+import { Nft } from "../api-clients/hedera-mirror-node-api-client";
 import { getFirstNft, getMostRecentNFTs, NftWithMetadata } from "../api-clients/hedera-mirror-node-api-helper";
 import { NftSquare } from "../components/nfts/nft-square";
 
 export const Home = () => {
-  const [firstNftByTokenId, setFirstNftByTokenId] = useState<Map<string, NftWithMetadata>>(new Map());
+  const [firstNftByTokenId, setFirstNftByTokenId] = useState<Map<string, Nft>>(new Map());
   const [nftTokens, setNftTokens] = useState<{ token_id: string, symbol: string, type: string }[]>([]);
 
   useEffect(() => {
@@ -16,7 +17,7 @@ export const Home = () => {
   }, []);
 
   useEffect(() => {
-    const map = new Map<string, NftWithMetadata>();
+    const map = new Map<string, Nft>();
     for (const nft of nftTokens) {
       if (!map.has(nft.token_id)) {
         getFirstNft(nft.token_id).then(val => {
@@ -52,7 +53,10 @@ export const Home = () => {
           {nfts.slice(startIndex, endIndex).map((o) => {
             return (
               <Grid item xs={12} sm={6} md={4} lg={2} key={`${o.token_id}:${o.serial_number}`}>
-                <NftSquare nft={o} />
+                <NftSquare
+                  tokenId={o.token_id!}
+                  serialNumber={o.serial_number!}
+                />
               </Grid>
             );
           })}

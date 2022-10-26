@@ -2,7 +2,8 @@ import { Alert, Box, Chip, CircularProgress, Grid, Pagination, Snackbar, Stack, 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
-import { listAllAccountNftsWithMetadata, NftWithMetadata } from "../api-clients/hedera-mirror-node-api-helper";
+import { Nft } from "../api-clients/hedera-mirror-node-api-client";
+import { listAllNftsForAccount } from "../api-clients/hedera-mirror-node-api-helper";
 import { NftSquare } from "../components/nfts/nft-square";
 import { getDomainsForAccount } from "../services/domain-service";
 import { actions } from "../store";
@@ -13,7 +14,7 @@ interface AccountDomainInfo {
 }
 
 export const Account = () => {
-  const [nfts, setNfts] = useState<NftWithMetadata[]>([]);
+  const [nfts, setNfts] = useState<Nft[]>([]);
   const [accountDomains, setAccountDomains] = useState<AccountDomainInfo[]>([]);
   const [loadingDomains, setLoadingDomains] = useState<boolean>(false);
   const [err, setErr] = useState('');
@@ -30,13 +31,12 @@ export const Account = () => {
   useEffect(() => {
     setNfts([]);
     dispatch(actions.page.setIsLoading(true));
-    listAllAccountNftsWithMetadata(id, Infinity, (_, allNfts) => {
-      if (idRef.current === id) {
-        setNfts(allNfts);
-      }
-    }).then((allNfts) => {
+    listAllNftsForAccount(id, Infinity).then((allNfts) => {
       if (allNfts.length === 0) {
         setErr(`Could not find NFTs for account id: ${id}`)
+        setNfts([]);
+      } else {
+        setNfts(allNfts);
       }
     }).catch(err => {
       if (idRef.current === id) {
@@ -141,7 +141,10 @@ export const Account = () => {
           {nfts.slice(startIndex, endIndex).map((o) => {
             return (
               <Grid item xs={12} sm={6} md={4} lg={2} key={`${o.token_id}:${o.serial_number}`}>
-                <NftSquare nft={o} />
+                <NftSquare
+                  tokenId={o.token_id!}
+                  serialNumber={o.serial_number!}
+                />
               </Grid>
             );
           })}

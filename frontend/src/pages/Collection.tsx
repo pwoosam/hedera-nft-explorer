@@ -119,7 +119,10 @@ export const Collection = () => {
           {nftsFiltered.slice(startIndex, endIndex).map((o) => {
             return (
               <Grid item  xs={12} sm={6} md={4} lg={2} key={`${o.token_id}:${o.serial_number}`}>
-                <NftSquare nft={o} />
+                <NftSquare
+                  tokenId={o.token_id!}
+                  serialNumber={o.serial_number!}
+                />
               </Grid>
             );
           })}

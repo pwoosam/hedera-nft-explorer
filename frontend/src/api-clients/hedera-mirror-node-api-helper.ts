@@ -38,14 +38,25 @@ export const fetchArrayBuffer = (url: string) => fetch(url).then(response => {
 
 export const getNftierUrl = (nftierPath: string, sn: number) => `https://nftier.tech/hedera/${nftierPath}/${sn}`;
 
-const tokenInfo = new Map<string, TokenInfo>();
-const getTokenInfo = async (tokenId: string) => {
+const tokenInfo = new Map<string, Promise<TokenInfo>>();
+export const getTokenInfo = async (tokenId: string): Promise<TokenInfo> => {
   if (!tokenInfo.has(tokenId)) {
-    const promise = await client.getTokenById(tokenId, undefined).then(response => response.result);
+    const promise = client.getTokenById(tokenId, undefined).then(response => response.result);
     tokenInfo.set(tokenId, promise);
   }
-  
+
   return tokenInfo.get(tokenId)!;
+}
+
+const nftInfo = new Map<string, Promise<Nft>>();
+export const getNftInfo = async (tokenId: string, serialNumber: number): Promise<Nft> => {
+  const nftId = `${tokenId}:${serialNumber}`;
+  if (!nftInfo.has(nftId)) {
+    const promise = client.listNftBySerialnumber(tokenId, serialNumber).then(response => response.result);
+    nftInfo.set(nftId, promise);
+  }
+
+  return nftInfo.get(nftId)!;
 }
 
 export const executeWithRetriesAsync = async <T>(func: (retryNum: number) => Promise<T>, shouldRetry: (err: any) => boolean, maxRetries = 5): Promise<T> => {
@@ -65,31 +76,42 @@ export const executeWithRetriesAsync = async <T>(func: (retryNum: number) => Pro
   throw new Error("Reached maximum retries and did not rethrow error... Should not have gotten here.");
 };
 
+const metadataCache = new Map<string, Promise<any>>();
 export const getMetadataObj = async (metadata: string) => {
-  let metadataIpfs = decodeBase64(metadata);
+  if (!metadataCache.has(metadata)) {
+    metadataCache.set(metadata, new Promise(async (resolveOuter, rejectOuter) => {
+      let metadataIpfs = decodeBase64(metadata);
 
-  if (!metadataIpfs || metadataIpfs.length <= 20) {
-    throw new Error("NFT Metadata is invalid");
+      if (!metadataIpfs || metadataIpfs.length <= 20) {
+        throw new Error("NFT Metadata is invalid");
+      }
+
+      if (!metadataIpfs.startsWith('ipfs://') && !metadataIpfs.startsWith('https://')) {
+        metadataIpfs = `ipfs://${metadataIpfs}`;
+      }
+
+      try {
+        const metadataObj = await new BPromise<{
+          name?: string,
+          image?: string,
+          CID?: string,
+        }>(resolve => executeWithRetriesAsync(async (retry) => {
+          let metadataUrl = metadataIpfs;
+          if (!metadataIpfs.startsWith('https://')) {
+            metadataUrl = fromIpfsProtocolToUrl(metadataIpfs, retry % ipfsGateways.length);
+          }
+          const json = await fetchJson(metadataUrl);
+          resolve(json);
+        }, () => true)).timeout(30_000, 'Error, request timeout. IPFS data could not be loaded');
+  
+        resolveOuter(metadataObj);
+      } catch (err) {
+        rejectOuter(err);
+      }
+    }));
   }
 
-  if (!metadataIpfs.startsWith('ipfs://') && !metadataIpfs.startsWith('https://')) {
-    metadataIpfs = `ipfs://${metadataIpfs}`;
-  }
-
-  const metadataObj = await new BPromise<{
-    name?: string,
-    image?: string,
-    CID?: string,
-  }>(resolve => executeWithRetriesAsync(async (retry) => {
-    let metadataUrl = metadataIpfs;
-    if (!metadataIpfs.startsWith('https://')) {
-      metadataUrl = fromIpfsProtocolToUrl(metadataIpfs, retry % ipfsGateways.length);
-    }
-    const json = await fetchJson(metadataUrl);
-    resolve(json);
-  }, () => true)).timeout(10_000, 'Error, request timeout. IPFS data could not be loaded');
-
-  return metadataObj;
+  return metadataCache.get(metadata)!;
 }
 
 export const listAccounts = async (idGt: number | undefined, idLt: number | undefined, limit: number = 100) => {
@@ -169,6 +191,12 @@ export const listAllNfts = async (tokenId: string, maxRequests?: number) => {
   const queryFunc = () => client.listNfts(tokenId, undefined, 100, Order.Asc);
   const results = await queryUntilEnd(queryFunc, (res) => client.processListNfts(res), maxRequests);
   const nfts = results.map(o => o.nfts?.filter(o => !!o)).flat() as Nft[];
+  nfts.forEach(nft => {
+    const nftId = `${nft.token_id}:${nft.serial_number}`;
+    if (!nftInfo.has(nftId)) {
+      nftInfo.set(nftId, Promise.resolve(nft));
+    }
+  });
   return nfts;
 }
 
@@ -176,6 +204,12 @@ export const listAllNftsForAccount = async (accountId: string, maxRequests?: num
   const queryFunc = () => client.listNftByAccountId(accountId, undefined, undefined, undefined, 100, Order.Asc);
   const results = await queryUntilEnd(queryFunc, (res) => client.processListNftByAccountId(res), maxRequests);
   const nfts = results.map(o => o.nfts?.filter(o => !!o)).flat() as Nft[];
+  nfts.forEach(nft => {
+    const nftId = `${nft.token_id}:${nft.serial_number}`;
+    if (!nftInfo.has(nftId)) {
+      nftInfo.set(nftId, Promise.resolve(nft));
+    }
+  });
   return nfts;
 }
 
@@ -204,9 +238,20 @@ export const getAccountFirstNft = async (
 export const getFirstNft = async (
   tokenId: string,
 ) => {
-  const response = await client.listNfts(tokenId, undefined, 100, Order.Asc);
+  const response = await client.listNfts(tokenId, undefined, 1, Order.Asc);
   if (response.result.nfts && response.result.nfts.length > 0) {
     const nftInfo = response.result.nfts[0];
+    return nftInfo;
+  }
+
+  return null;
+}
+
+export const getFirstNftWithMetadata = async (
+  tokenId: string,
+) => {
+  const nftInfo = await getFirstNft(tokenId);
+  if (nftInfo) {
     let metadataObj: any = null;
     if (nftInfo.metadata) {
       metadataObj = await getMetadataObj(nftInfo.metadata).catch(() => null);

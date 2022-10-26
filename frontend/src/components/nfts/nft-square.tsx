@@ -1,73 +1,93 @@
 import { Box, Button, Card, CardContent, Link, Chip, Popover, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { fromIpfsIdToUrl, fromIpfsProtocolToUrl, NftWithMetadata } from "../../api-clients/hedera-mirror-node-api-helper";
+import { getMetadataObj, getNftInfo, getTokenInfo } from "../../api-clients/hedera-mirror-node-api-helper";
 import { decodeBase64 } from "../../utils";
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import '@google/model-viewer';
+import { IpfsMedia } from "./ipfs-media";
+import { Nft, TokenInfo } from "../../api-clients/hedera-mirror-node-api-client";
 
-const isVideoMetadata = (metadataObj?: { type?: string }) => {
-  if (metadataObj?.type && typeof metadataObj.type === 'string') {
-    return metadataObj.type.startsWith('video');
-  }
-  return false;
-}
+export const NftSquareDummy = (props: {
+  onWidthChange: (width: number) => void,
+}) => {
+  const { onWidthChange } = props;
 
-const getUrlFromImageMetadata = (metadataObj?: {
-  image?: string | { type: string, description: string },
-  type?: string,
-  CID?: string,
-}): string => {
-  if (!metadataObj) {
-    return '';
-  }
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (ref.current) {
+      const measure = () => {
+        if (ref.current) {
+          setWidth(ref.current.clientWidth);
+          onWidthChange(ref.current.clientWidth);
+        }
+      };
 
-  if (!metadataObj.image && !metadataObj.CID) {
-    return '';
-  }
-
-  if (typeof metadataObj.image === 'object') {
-    return getUrlFromImageMetadata({
-      ...metadataObj,
-      image: metadataObj.image.description,
-    });
-  }
-
-  const isVideo = isVideoMetadata(metadataObj);
-
-  let srcUrl = '';
-  if (metadataObj.image) {
-    if (metadataObj.image.startsWith("ipfs://")) {
-      srcUrl = fromIpfsProtocolToUrl(metadataObj.image);
-    } else if (metadataObj.image.startsWith("http")) {
-      const url = new URL(metadataObj.image);
-      let cid = '';
-      if (url.pathname.startsWith('/ipfs')) {
-        cid = url.pathname.replace('/ipfs/', '');
-      } else {
-        cid = url.hostname.split('.')[0];
-      }
-      srcUrl = fromIpfsIdToUrl(cid);
-    } else if (metadataObj.image) {
-      srcUrl = fromIpfsIdToUrl(metadataObj.image);
+      measure();
+      window.addEventListener("resize", measure);
+      return () => {
+        window.removeEventListener("resize", measure);
+      };
     }
-  } else if (metadataObj.CID) {
-    // This case handles early Hash Boos
-    const cid = metadataObj.CID.replace('https://', '').split('.')[0];
-    srcUrl = fromIpfsIdToUrl(cid);
-  } else if (metadataObj.CID) {
-    srcUrl = fromIpfsIdToUrl(metadataObj.CID);
-  }
+  }, [onWidthChange]);
 
-  if (!isVideo) {
-    srcUrl += '?class=thumbnail';
-  }
-
-  return srcUrl;
+  return (
+    <Card
+      ref={ref}
+      sx={{
+        position: "relative",
+        width: "100%",
+        lineHeight: 0,
+      }}
+    >
+      <Box
+        width={width}
+        height={width}
+      >
+      </Box>
+      <CardContent
+        sx={{
+          lineHeight: 1,
+        }}
+      >
+        <Typography
+          variant="h6"
+          noWrap
+        >
+          XXX
+        </Typography>
+        <Typography
+          variant="subtitle1"
+          lineHeight={1}
+          pb={1}
+        >
+          XXX
+        </Typography>
+        <Typography
+          variant="h6"
+        >
+          Owner
+        </Typography>
+        <Typography>
+          XXX
+        </Typography>
+        <Typography
+          variant="h6"
+        >
+          Token
+        </Typography>
+        <Typography>
+          XXX
+        </Typography>
+      </CardContent>
+    </Card>
+  );
 }
 
 export const NftSquare = (props: {
-  nft: NftWithMetadata,
+  tokenId: string,
+  serialNumber: number,
 }) => {
   const serialNumberBadgeElm = useRef(null);
   const [showAttributes, setShowAttributes] = useState(false);
@@ -77,39 +97,67 @@ export const NftSquare = (props: {
 
   const [showMoreDescription, setShowMoreDescription] = useState(false);
 
-  let metadataLoadingErrMessage: string | undefined;
-  if (props.nft.metadataErrObj) {
-    if (typeof props.nft.metadataErrObj.message === 'string') {
-      metadataLoadingErrMessage = props.nft.metadataErrObj.message;
-    } else {
-      metadataLoadingErrMessage = JSON.stringify(props.nft.metadataErrObj, null, 2)
-    }
-  }
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+  const [nftInfo, setNftInfo] = useState<Nft | null>(null);
+  const [metadataObj, setMetadataObj] = useState<any | null>(null);
+  const [metadataErrObj, setMetadataErrObj] = useState<Error | null>(null);
+  const [ipfsMediaErr, setIpfsMediaErr] = useState('');
 
-  const [imgTagErrored, setImgTagErrored] = useState(false);
-
-  // clear imgTagErrored if new nft loaded
   useEffect(() => {
-    setImgTagErrored(false);
-  }, [props.nft]);
+    if (props.tokenId) {
+      getTokenInfo(props.tokenId).then(info => {
+        setTokenInfo(info);
+      });
+    }
+  }, [props.tokenId]);
 
-  const isVideo = useMemo(() => isVideoMetadata(props.nft.metadataObj) || imgTagErrored, [props.nft, imgTagErrored]);
-  const srcUrl = useMemo(() => getUrlFromImageMetadata(props.nft.metadataObj), [props.nft]);
+  useEffect(() => {
+    if (props.tokenId && props.serialNumber >= 0) {
+      getNftInfo(props.tokenId, props.serialNumber).then(info => {
+        setNftInfo(info);
+      });
+    }
+  }, [props.tokenId, props.serialNumber]);
 
-  const hasAnyKeys = useMemo(() => !!props.nft.tokenInfo.admin_key ||
-    !!props.nft.tokenInfo.freeze_key ||
-    !!props.nft.tokenInfo.supply_key ||
-    !!props.nft.tokenInfo.pause_key ||
-    !!props.nft.tokenInfo.fee_schedule_key ||
-    !!props.nft.tokenInfo.kyc_key ||
-    !!props.nft.tokenInfo.wipe_key,
-    [props.nft]);
+  useEffect(() => {
+    if (nftInfo) {
+      if (nftInfo.metadata) {
+        setMetadataErrObj(null);
+        getMetadataObj(nftInfo.metadata).then(o => {
+          setMetadataObj(o);
+        }).catch(err => {
+          setMetadataErrObj(err);
+        });
+      } else {
+        setMetadataErrObj(new Error('No metadata'));
+      }
+    }
+  }, [nftInfo]);
+
+  const metadataLoadingErrMessage: string | undefined = useMemo(() => {
+    if (metadataErrObj) {
+      if (typeof metadataErrObj.message === 'string') {
+        return metadataErrObj.message;
+      } else {
+        return JSON.stringify(metadataErrObj, null, 2)
+      }
+    }
+  }, [metadataErrObj]);
+
+  const hasAnyKeys = useMemo(() => tokenInfo && (!!tokenInfo.admin_key ||
+    !!tokenInfo.freeze_key ||
+    !!tokenInfo.supply_key ||
+    !!tokenInfo.pause_key ||
+    !!tokenInfo.fee_schedule_key ||
+    !!tokenInfo.kyc_key ||
+    !!tokenInfo.wipe_key),
+    [tokenInfo]);
 
   const shortDescriptionLength = 120;
   const [description, isDescriptionLong] = useMemo(() => {
     let description = '';
-    if (props.nft.metadataObj && props.nft.metadataObj.description) {
-      const metadataDesc = props.nft.metadataObj.description;
+    if (metadataObj && metadataObj.description) {
+      const metadataDesc = metadataObj.description;
       if (typeof metadataDesc === "string") {
         description = metadataDesc;
       } else if (metadataDesc.description) {
@@ -121,7 +169,7 @@ export const NftSquare = (props: {
     const isDescriptionLong = description.length > shortDescriptionLength;
 
     return [description, isDescriptionLong];
-  }, [props.nft]);
+  }, [metadataObj]);
 
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -139,9 +187,26 @@ export const NftSquare = (props: {
         window.removeEventListener("resize", measure);
       };
     }
-  }, []);
+  }, [ref, tokenInfo, nftInfo, metadataObj]);
 
-  const cannotLoadImg = props.nft.tokenInfo.total_supply === "0" || srcUrl === "";
+  if (props.tokenId === "0.0.1235922") {
+    console.log({
+      tokenInfo, nftInfo, metadataObj, metadataErrObj
+    });
+  }
+
+
+  if (!tokenInfo || !nftInfo || !(metadataObj || metadataLoadingErrMessage)) {
+    return (
+      <NftSquareDummy
+        onWidthChange={width => {
+          setWidth(width);
+        }}
+      />
+    );
+  }
+
+  const cannotLoadImg = tokenInfo.total_supply === "0" || !!ipfsMediaErr;
 
   return (
     <Card
@@ -162,49 +227,15 @@ export const NftSquare = (props: {
         >
           <QuestionMarkIcon color="primary" fontSize="large" />
         </Box>
-      ) : (isVideo ? (
-        <video
-          width={width}
-          height={width}
-          src={srcUrl}
-          autoPlay
-          playsInline
-          loop
-          muted
-          className="img-contain"
-        ></video>
       ) : (
-        srcUrl.includes('.glb') ? (
-          <Box
-            width={width}
-            height={width}
-            px={2}
-          >
-            .gbl not supported
-          </Box>
-          // <model-viewer
-          //   width={width}
-          //   height={width}
-          //   alt={`NFT number ${props.nft.serial_number}`}
-          //   src={srcUrl}
-          //   className="img-contain"
-          //   autoplay
-          // ></model-viewer>
-        ) : (
-          <img
-            width={width}
-            height={width}
-            alt={`NFT number ${props.nft.serial_number}`}
-            {...props}
-            src={srcUrl}
-            className="img-contain"
-            loading="lazy"
-            onError={e => {
-              setImgTagErrored(true);
-            }}
-          ></img>
-        )
-      ))}
+        <IpfsMedia
+          size={width}
+          metadataObj={metadataObj}
+          onError={err => {
+            setIpfsMediaErr(err);
+          }}
+        />
+      )}
       <CardContent
         sx={{
           lineHeight: 1,
@@ -212,17 +243,17 @@ export const NftSquare = (props: {
       >
         <Typography
           variant="h6"
-          title={props.nft.tokenInfo.name}
+          title={tokenInfo.name}
           noWrap
         >
-          {props.nft.tokenInfo.name}
+          {tokenInfo.name}
         </Typography>
         <Typography
           variant="subtitle1"
           lineHeight={1}
           pb={1}
         >
-          {`${props.nft.serial_number}/${props.nft.tokenInfo.total_supply}`}
+          {`${props.serialNumber}/${tokenInfo.total_supply}`}
         </Typography>
         <Typography
           variant="h6"
@@ -231,10 +262,10 @@ export const NftSquare = (props: {
         </Typography>
         <Typography>
           <Link
-            to={`/account/${props.nft.account_id}`}
+            to={`/account/${nftInfo.account_id}`}
             component={RouterLink}
           >
-            {props.nft.account_id}
+            {nftInfo.account_id}
           </Link>
         </Typography>
         <Typography
@@ -244,10 +275,10 @@ export const NftSquare = (props: {
         </Typography>
         <Typography>
           <Link
-            to={`/collection/${props.nft.token_id}`}
+            to={`/collection/${nftInfo.token_id}`}
             component={RouterLink}
           >
-            {props.nft.token_id}
+            {nftInfo.token_id}
           </Link>
         </Typography>
         {description && (
@@ -284,13 +315,13 @@ export const NftSquare = (props: {
               Keys
             </Typography>
             <Box display="flex" gap={0.5} flexWrap="wrap">
-              {props.nft.tokenInfo.supply_key && <Chip title={`${props.nft.tokenInfo.supply_key.key}`} label="Supply" color="success" />}
-              {props.nft.tokenInfo.wipe_key && <Chip title={`${props.nft.tokenInfo.wipe_key.key}`} label="Wipe" color="error" />}
-              {props.nft.tokenInfo.admin_key && <Chip title={`${props.nft.tokenInfo.admin_key.key}`} label="Admin" color="warning" />}
-              {props.nft.tokenInfo.freeze_key && <Chip title={`${props.nft.tokenInfo.freeze_key.key}`} label="Freeze" color="warning" />}
-              {props.nft.tokenInfo.pause_key && <Chip title={`${props.nft.tokenInfo.pause_key.key}`} label="Pause" color="warning" />}
-              {props.nft.tokenInfo.fee_schedule_key && <Chip title={`${props.nft.tokenInfo.fee_schedule_key.key}`} label="Fee Schedule" color="warning" />}
-              {props.nft.tokenInfo.kyc_key && <Chip title={`${props.nft.tokenInfo.kyc_key.key}`} label="KYC" color="warning" />}
+              {tokenInfo.supply_key && <Chip title={`${tokenInfo.supply_key.key}`} label="Supply" color="success" />}
+              {tokenInfo.wipe_key && <Chip title={`${tokenInfo.wipe_key.key}`} label="Wipe" color="error" />}
+              {tokenInfo.admin_key && <Chip title={`${tokenInfo.admin_key.key}`} label="Admin" color="warning" />}
+              {tokenInfo.freeze_key && <Chip title={`${tokenInfo.freeze_key.key}`} label="Freeze" color="warning" />}
+              {tokenInfo.pause_key && <Chip title={`${tokenInfo.pause_key.key}`} label="Pause" color="warning" />}
+              {tokenInfo.fee_schedule_key && <Chip title={`${tokenInfo.fee_schedule_key.key}`} label="Fee Schedule" color="warning" />}
+              {tokenInfo.kyc_key && <Chip title={`${tokenInfo.kyc_key.key}`} label="KYC" color="warning" />}
             </Box>
           </>
         )}
@@ -301,7 +332,7 @@ export const NftSquare = (props: {
           Actions
         </Typography>
         <Box display="flex" gap={0.5} flexWrap="wrap">
-          {props.nft.metadataObj?.attributes && (
+          {metadataObj && metadataObj.attributes && (
             <>
               <Chip
                 label="Show Attributes"
@@ -328,7 +359,7 @@ export const NftSquare = (props: {
                   </Box>
                 ) : (
                   <Box display="grid" gridTemplateColumns="1fr 2fr" gap={1} p={1}>
-                    {props.nft.metadataObj?.attributes?.map?.((attr: {
+                    {metadataObj && metadataObj.attributes?.map?.((attr: {
                       trait_type: string,
                       value: string,
                     }) => (
@@ -367,12 +398,12 @@ export const NftSquare = (props: {
               maxWidth="70vw"
             >
               <pre className="pre-wrap">
-                {props.nft?.metadata ? (
+                {nftInfo?.metadata ? (
                   <>
-                    {props.nft?.metadata}
+                    {nftInfo?.metadata}
                     <br />
                     <br />
-                    {decodeBase64(props.nft?.metadata)}
+                    {decodeBase64(nftInfo?.metadata)}
                     <br />
                     <br />
                   </>
@@ -380,7 +411,7 @@ export const NftSquare = (props: {
                 {metadataLoadingErrMessage ? (
                   metadataLoadingErrMessage
                 ) : (
-                  JSON.stringify(props.nft?.metadataObj, null, 2)
+                  JSON.stringify(metadataObj, null, 2)
                 )}
               </pre>
             </Box>
