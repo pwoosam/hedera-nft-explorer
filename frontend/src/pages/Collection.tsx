@@ -1,4 +1,5 @@
-import { Alert, Box, Grid, Pagination, Snackbar, Stack } from "@mui/material";
+import { Alert, Box, Grid, Pagination, Snackbar, Stack, TextField } from "@mui/material";
+import _ from "lodash";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -96,6 +97,35 @@ export const Collection = () => {
   const itemsPerPage = 12;
   const pages = Math.ceil(nftsFiltered.length / itemsPerPage);
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentPageInput, setCurrentPageInput] = useState('1');
+
+  const setCurrentPageDebounced = useMemo(() => {
+    return _.debounce(
+      (pageNum: number) => setCurrentPage(pageNum),
+      250,
+      {
+        leading: false,
+        trailing: true,
+      }
+    );
+  }, [setCurrentPage]);
+
+  useEffect(() => {
+    const num = Number.parseInt(currentPageInput);
+    if (Number.isNaN(num)) {
+      return;
+    }
+
+    if (num > pages) {
+      setCurrentPageDebounced(pages);
+    } else if (num < 1) {
+      setCurrentPageDebounced(1);
+    } else if (!num) {
+      setCurrentPageDebounced(1);
+    } else {
+      setCurrentPageDebounced(num);
+    }
+  }, [pages, currentPageInput, setCurrentPageDebounced]);
 
   const startIndex = itemsPerPage * (currentPage - 1);
   const endIndex = startIndex + itemsPerPage;
@@ -128,13 +158,33 @@ export const Collection = () => {
           })}
         </Grid>
       </Box>
-      <Box>
+      <Box
+        display="flex"
+        flexDirection="row"
+        alignItems="center"
+      >
         <Pagination
           count={pages}
           page={currentPage}
           color="primary"
           onChange={(_, page) => {
             setCurrentPage(page);
+          }}
+        />
+        <TextField
+          type="number"
+          value={currentPageInput}
+          onChange={e => {
+            setCurrentPageInput(e.target.value);
+          }}
+          inputProps={{
+            sx: {
+              paddingTop: '0.5rem',
+              paddingBottom: '0.5rem',
+            },
+          }}
+          sx={{
+            width: '4rem',
           }}
         />
       </Box>
