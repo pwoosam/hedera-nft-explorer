@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 import { Nft } from "../api-clients/hedera-mirror-node-api-client";
 import { listAllNftsForAccount } from "../api-clients/hedera-mirror-node-api-helper";
+import { AccountBalance } from "../components/accounts/account-balance";
 import { NftSquare } from "../components/nfts/nft-square";
 import { getDomainsForAccount } from "../services/domain-service";
 import { actions } from "../store";
@@ -94,6 +95,7 @@ export const Account = () => {
           {err}
         </Alert>
       </Snackbar>
+      <AccountBalance accountId={id} />
       <Box>
         <Typography
           variant="h2"

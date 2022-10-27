@@ -189,13 +189,6 @@ export const NftSquare = (props: {
     }
   }, [ref, tokenInfo, nftInfo, metadataObj]);
 
-  if (props.tokenId === "0.0.1235922") {
-    console.log({
-      tokenInfo, nftInfo, metadataObj, metadataErrObj
-    });
-  }
-
-
   if (!tokenInfo || !nftInfo || !(metadataObj || metadataLoadingErrMessage)) {
     return (
       <NftSquareDummy

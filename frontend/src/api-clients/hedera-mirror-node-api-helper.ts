@@ -359,7 +359,6 @@ export const listTrans = async (onChunkLoaded: (
           x = Number.parseFloat(lastTrans.valid_start_timestamp);
         }
         const datetimestamp = new Date(x * 1000);
-        console.log(datetimestamp);
         onChunkLoaded(processedResponse.result.transactions, trans);
 
         if (datetimestamp.getDate() >= 15) {
