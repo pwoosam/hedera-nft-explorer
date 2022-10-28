@@ -44,7 +44,6 @@ const StakingRewardsModal = (props: {
           p: 4,
         }}
       >
-        <br />
         <Typography
           variant="h6"
           textAlign="center"

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 import { listAllNftsWithMetadata, NftWithMetadata } from "../api-clients/hedera-mirror-node-api-helper";
+import { CollectionHoldersButton } from "../components/collections/collection-holders";
 import { NftFilter } from "../components/nfts/nft-filter";
 import { NftSquare } from "../components/nfts/nft-square";
 import { actions } from "../store";
@@ -22,26 +23,6 @@ export const Collection = () => {
   useEffect(() => {
     idRef.current = id;
   }, [id]);
-
-  // useEffect(() => {
-  //   const owners = new Map<string, number>();
-  //   for (const nft of nfts) {
-  //     const accId = nft.account_id!;
-  //     if (accId) {
-  //       if (owners.has(accId)) {
-  //         const currCount = owners.get(accId)!;
-  //         owners.set(accId, currCount + 1);
-  //       } else {
-  //         owners.set(accId, 1);
-  //       }
-  //     } else {
-  //       console.log(`#${nft.serial_number} has no owner`);
-  //     }
-  //   }
-
-  //   const res = Array.from(owners).sort((a, b) => b[1] - a[1]);
-  //   console.log(res);
-  // }, [nfts]);
 
   useEffect(() => {
     setNfts([]);
@@ -163,6 +144,16 @@ export const Collection = () => {
           {err}
         </Alert>
       </Snackbar>
+      <Box
+        display="flex"
+        flexDirection="row"
+        flexWrap="wrap"
+      >
+        <CollectionHoldersButton
+          nfts={nfts}
+          tokenId={id}
+        />
+      </Box>
       <NftFilter properties={properties} onChange={filters => setSelectedAttributes(filters)}></NftFilter>
       <Box>
         <Grid container spacing={1}>
