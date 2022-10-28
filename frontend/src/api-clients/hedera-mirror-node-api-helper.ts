@@ -2,6 +2,7 @@ import _ from "lodash";
 import { decodeBase64 } from "../utils";
 import { HederaMirrorNodeAPIClient, Links, Nft, Order, SwaggerResponse, TokenInfo, Transaction, TransactionTypes } from "./hedera-mirror-node-api-client";
 import BPromise from 'bluebird';
+import moment from 'moment';
 
 export type NftWithMetadata = Nft & { metadataObj?: any, metadataErrObj?: any, tokenInfo: TokenInfo };
 
@@ -46,6 +47,50 @@ export const getTokenInfo = async (tokenId: string): Promise<TokenInfo> => {
   }
 
   return tokenInfo.get(tokenId)!;
+}
+
+export const getThisMonthsIncome = async (accountId: string) => {
+  const now = () => moment.utc();
+  // beginning of month
+  const startTs = `${now().startOf('month').toDate().valueOf() / 1000}`;
+  // end of month
+  const endTs = `${now().startOf('month').add(1, 'month').toDate().valueOf() / 1000}`;
+
+  let response = await client.listTransactions(accountId, 100, Order.Asc, [`gte:${startTs}`, `lt:${endTs}`], TransactionTypes.CRYPTOTRANSFER, undefined, undefined);
+  const trans = [];
+  if (response.result.transactions && response.result.transactions.length > 0) {
+    trans.push(...response.result.transactions);
+  }
+  while (response.result.links?.next) {
+    const fetchResult = await fetch(client.baseUrl + response.result.links.next);
+    response = await client.processListTransactions(fetchResult);
+    if (response.result.transactions && response.result.transactions.length > 0) {
+      trans.push(...response.result.transactions);
+    }
+  }
+
+  return trans;
+}
+
+export const getStakingRewardTransactions = async (accountId: string, daysAgo: number) => {
+  const now = () => moment.utc();
+  const startTs = `${now().subtract(daysAgo, 'days').toDate().valueOf() / 1000}`;
+  const endTs = `${now().toDate().valueOf() / 1000}`;
+
+  let response = await client.listTransactions(accountId, 100, Order.Desc, [`gte:${startTs}`, `lt:${endTs}`], undefined, undefined, undefined);
+  const trans = [];
+  if (response.result.transactions && response.result.transactions.length > 0) {
+    trans.push(...response.result.transactions);
+  }
+  while (response.result.links?.next) {
+    const fetchResult = await fetch(client.baseUrl + response.result.links.next);
+    response = await client.processListTransactions(fetchResult);
+    if (response.result.transactions && response.result.transactions.length > 0) {
+      trans.push(...response.result.transactions);
+    }
+  }
+
+  return trans.filter(o => o.transfers?.some(q => q.account === '0.0.800' && q.amount < 0));
 }
 
 const nftInfo = new Map<string, Promise<Nft>>();
@@ -197,8 +242,8 @@ export const listAllNfts = async (tokenId: string, maxRequests?: number) => {
       nftInfo.set(nftId, Promise.resolve(nft));
     }
   });
-  return nfts;
-}
+  return nfts.filter(o => !o.deleted);
+};
 
 export const listAllNftsForAccount = async (accountId: string, maxRequests?: number) => {
   const queryFunc = () => client.listNftByAccountId(accountId, undefined, undefined, undefined, 100, Order.Asc);
@@ -210,7 +255,7 @@ export const listAllNftsForAccount = async (accountId: string, maxRequests?: num
       nftInfo.set(nftId, Promise.resolve(nft));
     }
   });
-  return nfts;
+  return nfts.filter(o => !o.deleted);
 }
 
 export const getAccountFirstNft = async (

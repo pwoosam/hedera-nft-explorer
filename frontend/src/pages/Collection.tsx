@@ -23,6 +23,26 @@ export const Collection = () => {
     idRef.current = id;
   }, [id]);
 
+  // useEffect(() => {
+  //   const owners = new Map<string, number>();
+  //   for (const nft of nfts) {
+  //     const accId = nft.account_id!;
+  //     if (accId) {
+  //       if (owners.has(accId)) {
+  //         const currCount = owners.get(accId)!;
+  //         owners.set(accId, currCount + 1);
+  //       } else {
+  //         owners.set(accId, 1);
+  //       }
+  //     } else {
+  //       console.log(`#${nft.serial_number} has no owner`);
+  //     }
+  //   }
+
+  //   const res = Array.from(owners).sort((a, b) => b[1] - a[1]);
+  //   console.log(res);
+  // }, [nfts]);
+
   useEffect(() => {
     setNfts([]);
     dispatch(actions.page.setIsLoading(true));
@@ -169,6 +189,7 @@ export const Collection = () => {
           color="primary"
           onChange={(_, page) => {
             setCurrentPage(page);
+            setCurrentPageInput(`${page}`);
           }}
         />
         <TextField
@@ -184,7 +205,7 @@ export const Collection = () => {
             },
           }}
           sx={{
-            width: '4rem',
+            width: '5rem',
           }}
         />
       </Box>

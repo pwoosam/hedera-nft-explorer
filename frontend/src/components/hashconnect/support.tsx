@@ -7,6 +7,7 @@ import { AppStore } from "../../store";
 import { Hbar, HbarUnit, TransferTransaction } from "@hashgraph/sdk";
 import { getAccountIdFromDomain } from "../../services/domain-service";
 import CoffeeIcon from '@mui/icons-material/Coffee';
+import { SupportProgress } from "./support-progress";
 
 const devDomain = 'dev.hbar';
 
@@ -36,6 +37,8 @@ const SupportModal = (props: {
           p: 4,
         }}
       >
+        <SupportProgress showAmount />
+        <br />
         <Typography
           variant="h6"
         >

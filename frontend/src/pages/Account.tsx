@@ -193,6 +193,7 @@ export const Account = () => {
           color="primary"
           onChange={(_, page) => {
             setCurrentPage(page);
+            setCurrentPageInput(`${page}`);
           }}
         />
         <TextField
@@ -208,7 +209,7 @@ export const Account = () => {
             },
           }}
           sx={{
-            width: '4rem',
+            width: '5rem',
           }}
         />
       </Box>

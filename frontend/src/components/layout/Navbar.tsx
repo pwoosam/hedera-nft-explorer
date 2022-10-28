@@ -1,17 +1,19 @@
-import { AppBar, Button, CircularProgress, Link, TextField, Toolbar, Typography } from "@mui/material";
+import { AppBar, Box, Button, CircularProgress, Link, TextField, Toolbar, Typography, useMediaQuery } from "@mui/material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import { alpha, useTheme } from "@mui/material/styles";
+import { alpha, Theme, useTheme } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
 import { actions, AppStore } from "../../store";
 import { getIdType, IdType } from "../../services/id-identifier";
 import { getAccountIdFromDomain } from "../../services/domain-service";
 import { SupportButton } from "../hashconnect/support";
+import { SupportProgress } from "../hashconnect/support-progress";
 
 export const Navbar = () => {
   const searchQuery = useSelector((state: AppStore) => state.page.searchQuery);
   const isLoading = useSelector((state: AppStore) => state.page.isLoading);
 
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -84,11 +86,24 @@ export const Navbar = () => {
         </form>
         {isLoading && <CircularProgress color="warning" />}
 
-        <SupportButton
+        <Box
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
           sx={{
             marginLeft: 'auto'
           }}
-        />
+        >
+          {!isSmallScreen && (
+            <Box
+              width="10vw"
+              mr="0.5rem"
+            >
+              <SupportProgress />
+            </Box>
+          )}
+          <SupportButton />
+        </Box>
       </Toolbar>
     </AppBar>
   );
