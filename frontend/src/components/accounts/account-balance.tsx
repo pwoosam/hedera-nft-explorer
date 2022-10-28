@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { TokenInfo, TokenInfoType } from "../../api-clients/hedera-mirror-node-api-client";
 import { getTokenInfo } from "../../api-clients/hedera-mirror-node-api-helper";
 import { getAccountBalances } from "../../services/hedera-client";
-import { StakingRewardsButton } from "./account-staking-rewards";
+// import { StakingRewardsButton } from "./account-staking-rewards";
 
 interface TokenBalance {
   tokenInfo: TokenInfo | "HBAR",
@@ -70,12 +70,12 @@ export const AccountBalance = (props: {
         >
           Token Balances
         </Typography>
-        <StakingRewardsButton
+        {/* <StakingRewardsButton
           accountId={accountId}
           sx={{
             marginLeft: "auto"
           }}
-        />
+        /> */}
       </Box>
       {isLoading ? (
         <CircularProgress />
