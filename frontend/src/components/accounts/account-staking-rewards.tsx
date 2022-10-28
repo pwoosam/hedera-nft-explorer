@@ -33,6 +33,7 @@ const StakingRewardsModal = (props: {
         sx={{
           overflow: "scroll",
           maxHeight: "90vh",
+          maxWidth: "90vw",
           position: 'absolute',
           top: '50%',
           left: '50%',

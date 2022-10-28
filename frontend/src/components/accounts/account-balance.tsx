@@ -63,6 +63,7 @@ export const AccountBalance = (props: {
       <Box
         display="flex"
         flexDirection="row"
+        flexWrap="wrap"
       >
         <Typography
           variant="h2"
