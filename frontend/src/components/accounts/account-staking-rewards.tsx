@@ -94,7 +94,7 @@ export const StakingRewardsButton = (props: ButtonProps & {
         onClick={() => {
           setIsModalOpen(!isModalOpen);
         }}
-        {...props}
+        sx={props.sx}
       >
         Staking Rewards
       </Button>
