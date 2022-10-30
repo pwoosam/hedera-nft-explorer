@@ -1,4 +1,4 @@
-import { Alert, Box, Chip, CircularProgress, Grid, Pagination, Snackbar, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Checkbox, Chip, CircularProgress, FormControlLabel, Grid, Pagination, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import _ from "lodash";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -9,6 +9,7 @@ import { AccountBalance } from "../components/accounts/account-balance";
 import { NftSquare } from "../components/nfts/nft-square";
 import { getDomainsForAccount } from "../services/domain-service";
 import { actions } from "../store";
+import { wellKnownAccounts } from "../utils";
 
 interface AccountDomainInfo {
   tld: string,
@@ -18,6 +19,7 @@ interface AccountDomainInfo {
 export const Account = () => {
   const [nfts, setNfts] = useState<Nft[]>([]);
   const [accountDomains, setAccountDomains] = useState<AccountDomainInfo[]>([]);
+  const [paperhandsOnly, setPaperhandsOnly] = useState<boolean>(false);
   const [loadingDomains, setLoadingDomains] = useState<boolean>(false);
   const [err, setErr] = useState('');
   const dispatch = useDispatch();
@@ -76,8 +78,17 @@ export const Account = () => {
     });
   }, [id]);
 
+  const nftsFiltered: Nft[] = useMemo(() => {
+    let nftsFiltered_ = [...nfts];
+    if (paperhandsOnly) {
+      nftsFiltered_ = nftsFiltered_.filter(o => o.spender === wellKnownAccounts["Zuse Secondary"]);
+    }
+
+    return nftsFiltered_;
+  }, [nfts, paperhandsOnly]);
+
   const itemsPerPage = 12;
-  const pages = Math.ceil(nfts.length / itemsPerPage);
+  const pages = Math.ceil(nftsFiltered.length / itemsPerPage);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageInput, setCurrentPageInput] = useState('1');
 
@@ -163,14 +174,32 @@ export const Account = () => {
           </Box>
         )}
       </Box>
-      <Typography
-        variant="h2"
+      <Box
+        display="flex"
+        flexDirection="row"
+        flexWrap="wrap"
+        gap="1rem"
       >
-        NFTs
-      </Typography>
+        <Typography
+          variant="h2"
+        >
+          NFTs
+        </Typography>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={paperhandsOnly}
+              onChange={e => {
+                setPaperhandsOnly(e.target.checked);
+              }}
+            />
+          }
+          label="Paperhands Only"
+        />
+      </Box>
       <Box>
         <Grid container spacing={1}>
-          {nfts.slice(startIndex, endIndex).map((o) => {
+          {nftsFiltered.slice(startIndex, endIndex).map((o) => {
             return (
               <Grid item xs={12} sm={6} md={4} lg={2} key={`${o.token_id}:${o.serial_number}`}>
                 <NftSquare

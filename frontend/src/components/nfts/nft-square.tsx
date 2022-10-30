@@ -2,7 +2,7 @@ import { Box, Button, Card, CardContent, Link, Chip, Popover, Typography } from 
 import { Link as RouterLink } from "react-router-dom";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { getMetadataObj, getNftInfo, getTokenInfo } from "../../api-clients/hedera-mirror-node-api-helper";
-import { decodeBase64 } from "../../utils";
+import { decodeBase64, wellKnownAccounts } from "../../utils";
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import '@google/model-viewer';
 import { IpfsMedia } from "./ipfs-media";
@@ -248,6 +248,23 @@ export const NftSquare = (props: {
         >
           {`${props.serialNumber}/${tokenInfo.total_supply}`}
         </Typography>
+        {nftInfo.spender === wellKnownAccounts["Zuse Secondary"] && (
+          <Link
+            href={`https://zuse.market/collection/${tokenInfo.token_id!}`}
+            target="_blank"
+            referrerPolicy="no-referrer"
+            sx={{
+              "*": {
+                cursor: "pointer",
+              }
+            }}
+          >
+            <Chip
+              label="Paperhanding on Zuse"
+              color="success"
+            />
+          </Link>
+        )}
         <Typography
           variant="h6"
         >

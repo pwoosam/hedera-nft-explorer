@@ -10,7 +10,7 @@
     "@hashgraph/sdk": "^2.18.4",
     "@mui/icons-material": "^5.10.9",
     "@mui/material": "^5.10.9",
-    "@pwoosam/hashgraph-name-resolution-sdk": "^3.1.8",
+    "@pwoosam/hashgraph-name-resolution-sdk": "^3.1.9",
     "@reduxjs/toolkit": "^1.8.6",
     "axios": "^0.27.2",
     "bluebird": "^3.7.2",
