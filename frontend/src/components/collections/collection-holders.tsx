@@ -1,13 +1,99 @@
-import { Box, Button, ButtonProps, Checkbox, FormControlLabel, Link, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { Box, Button, ButtonProps, Checkbox, FormControlLabel, IconButton, InputAdornment, Link, Modal, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Nft } from "../../api-clients/hedera-mirror-node-api-client";
 import { DownloadCSV } from "../utilities/download-csv";
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 interface AccountNftCount {
   accountId: string,
   count: number,
   serialNumbers: number[],
+};
+
+const RandomNFTOwner = ({
+  nftOwners,
+}: {
+  nftOwners: AccountNftCount[],
+}) => {
+  const [winningAccountIdIndex, setWinningAccountIdIndex] = useState(-1);
+  const [nftsPerEntry, setNftsPerEntry] = useState(5);
+
+  useEffect(() => {
+    setWinningAccountIdIndex(-1);
+  }, [nftsPerEntry]);
+
+  const entries = useMemo(() => nftOwners.map(o => ({
+    accountId: o.accountId,
+    entries: nftsPerEntry > 0 ? Math.floor(o.count / nftsPerEntry) : 0
+  })), [nftOwners, nftsPerEntry]);
+
+  const choices = useMemo((): string[] => {
+    return entries.flatMap(o => new Array(o.entries).fill(o.accountId));
+  }, [entries]);
+
+  const setToRandom = useMemo(() => {
+    return () => {
+      const rand = Math.floor(Math.random() * choices.length);
+      setWinningAccountIdIndex(rand);
+    };
+  }, [choices]);
+
+  const winningAccountId = winningAccountIdIndex === -1 ? "None" : choices[winningAccountIdIndex];
+  let winningAccountsEntries = 0;
+  const foundEntry = entries.find(o => o.accountId === winningAccountId);
+  if (foundEntry) {
+    winningAccountsEntries = foundEntry.entries;
+  }
+
+  return (
+    <Box
+    >
+      <Typography
+        variant="h6"
+      >
+        Draw Winner
+      </Typography>
+
+      <TextField
+        label="# NFTs per entry"
+        type="number"
+        value={nftsPerEntry}
+        onChange={e => {
+          setNftsPerEntry(Number.parseInt(e.target.value));
+        }}
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                edge="end"
+                onClick={() => {
+                  setToRandom();
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </InputAdornment>
+          )
+        }}
+      />
+
+      <Typography>
+        Winner:&nbsp;
+        {winningAccountId === "None" ? (
+          "None"
+        ) : (
+          <Link
+            to={`/account/${winningAccountId}`}
+            component={RouterLink}
+          >
+            {winningAccountId}
+          </Link>
+        )}
+        {` [RNG: ${winningAccountIdIndex}] [${winningAccountsEntries} of ${choices.length} entries]`}
+      </Typography>
+    </Box>
+  )
 };
 
 const CollectionHoldersModal = (props: {
@@ -62,7 +148,7 @@ const CollectionHoldersModal = (props: {
     }
 
     return () => setNftOwners([]);
-  }, [nfts, includeListed])
+  }, [nfts, includeListed]);
 
   return (
     <Modal
@@ -73,6 +159,7 @@ const CollectionHoldersModal = (props: {
         sx={{
           overflow: "scroll",
           maxHeight: "90vh",
+          minWidth: "33vw",
           maxWidth: "90vw",
           position: 'absolute',
           top: '50%',
@@ -90,16 +177,6 @@ const CollectionHoldersModal = (props: {
         >
           NFT Hodlers
         </Typography>
-        <Box
-          display="flex"
-          flexDirection="row"
-          flexWrap="wrap"
-        >
-          <DownloadCSV
-            data={nftOwners}
-            filename={`${tokenId.split('.').pop()}_hodlers.csv`}
-          />
-        </Box>
         <FormControlLabel
           control={
             <Checkbox
@@ -111,6 +188,19 @@ const CollectionHoldersModal = (props: {
           }
           label="Include Listed NFTs"
         />
+        <RandomNFTOwner
+          nftOwners={nftOwners}
+        />
+        <Box
+          display="flex"
+          flexDirection="row"
+          flexWrap="wrap"
+        >
+          <DownloadCSV
+            data={nftOwners}
+            filename={`${tokenId.split('.').pop()}_hodlers.csv`}
+          />
+        </Box>
         <TableContainer component={Paper}>
           <Table aria-label="simple table">
             <TableHead>

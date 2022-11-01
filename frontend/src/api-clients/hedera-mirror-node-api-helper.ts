@@ -245,6 +245,11 @@ export const listAllNfts = async (tokenId: string, maxRequests?: number) => {
   return nfts.filter(o => !o.deleted);
 };
 
+export const getAccountInfo = async (accountId: string) => {
+  const response = await client.getAccountByIdOrAliasOrEvmAddress(accountId, undefined);
+  return response.result;
+}
+
 export const listAllNftsForAccount = async (accountId: string, maxRequests?: number) => {
   const queryFunc = () => client.listNftByAccountId(accountId, undefined, undefined, undefined, 100, Order.Asc);
   const results = await queryUntilEnd(queryFunc, (res) => client.processListNftByAccountId(res), maxRequests);
