@@ -7,6 +7,7 @@ import { getIdType, IdType } from "../../services/id-identifier";
 import { getAccountIdFromDomain } from "../../services/domain-service";
 import { SupportButton } from "../hashconnect/support";
 import { SupportProgress } from "../hashconnect/support-progress";
+import { getNftInfo } from "../../api-clients/hedera-mirror-node-api-helper";
 
 export const Navbar = () => {
   const searchQuery = useSelector((state: AppStore) => state.page.searchQuery);
@@ -42,6 +43,10 @@ export const Navbar = () => {
             const type = await getIdType(searchQuery);
             if (type === IdType.NFT) {
               navigate(`/collection/${searchQuery}`);
+            } else if (type === IdType.NFT_SN) {
+              const [id, sn] = searchQuery.split('/');
+              const nftInfo = await getNftInfo(id, Number.parseInt(sn));
+              navigate(`/account/${nftInfo.account_id!}`);
             } else if (type === IdType.ACCOUNT) {
               navigate(`/account/${searchQuery}`);
             } else if (type === IdType.DOMAIN) {

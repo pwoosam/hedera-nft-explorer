@@ -6,12 +6,21 @@ export enum IdType {
   ACCOUNT = 'account',
   TOPIC = 'topic',
   NFT = 'nft',
+  NFT_SN = 'nft_sn',
   FT = 'ft',
   DOMAIN = 'domain',
   UNKNOWN = 'unknown'
 }
 
 export const getIdType = async (id: string): Promise<IdType> => {
+  let sn = -1;
+  if (id.includes('/')) {
+    const idParts = id.split('/');
+    console.log(idParts);
+    id = idParts[0];
+    sn = Number.parseInt(idParts[1]);
+  }
+
   const domainSuffixes = await getDomainSuffixes();
   if (domainSuffixes.some(suffix => id.endsWith(suffix))) {
     return IdType.DOMAIN;
@@ -29,7 +38,11 @@ export const getIdType = async (id: string): Promise<IdType> => {
     if (token.result.type === TokenInfoType.FUNGIBLE_COMMON) {
       return IdType.FT;
     } else if (token.result.type === TokenInfoType.NON_FUNGIBLE_UNIQUE) {
-      return IdType.NFT;
+      if (sn === -1) {
+        return IdType.NFT;
+      } else {
+        return IdType.NFT_SN;
+      }
     }
   } catch {}
 
