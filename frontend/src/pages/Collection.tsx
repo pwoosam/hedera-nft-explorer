@@ -1,4 +1,4 @@
-import { Alert, Box, Grid, Pagination, Snackbar, Stack, TextField } from "@mui/material";
+import { Alert, Box, Checkbox, FormControlLabel, Grid, Pagination, Snackbar, Stack, TextField } from "@mui/material";
 import _ from "lodash";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -8,10 +8,12 @@ import { CollectionHoldersButton } from "../components/collections/collection-ho
 import { NftFilter } from "../components/nfts/nft-filter";
 import { NftSquare } from "../components/nfts/nft-square";
 import { actions } from "../store";
+import { wellKnownAccounts } from "../utils";
 
 export const Collection = () => {
   const [properties, setProperties] = useState<Map<string, string[]>>(new Map());
   const [nfts, setNfts] = useState<NftWithMetadata[]>([]);
+  const [paperhandsOnly, setPaperhandsOnly] = useState<boolean>(false);
   const [err, setErr] = useState('');
   const [selectedAttributes, setSelectedAttributes] = useState<Map<string, string[]>>(new Map());
   const dispatch = useDispatch();
@@ -68,7 +70,7 @@ export const Collection = () => {
   const nftsFiltered = useMemo(() => {
     const anyFiltersSelected = Array.from(selectedAttributes).some(o => o[1].length > 0);
 
-    const nftsFiltered = nfts.filter((o) => {
+    let nftsFiltered = nfts.filter((o) => {
       let shouldShowNft = true;
       if (anyFiltersSelected) {
         for (const selectedAttribute of Array.from(selectedAttributes)) {
@@ -92,8 +94,12 @@ export const Collection = () => {
       return shouldShowNft;
     });
 
+    if (paperhandsOnly) {
+      nftsFiltered = nftsFiltered.filter(o => o.spender === wellKnownAccounts["Zuse Secondary"]);
+    }
+
     return nftsFiltered;
-  }, [nfts, selectedAttributes]);
+  }, [nfts, selectedAttributes, paperhandsOnly]);
 
   const itemsPerPage = 12;
   const pages = Math.ceil(nftsFiltered.length / itemsPerPage);
@@ -148,10 +154,22 @@ export const Collection = () => {
         display="flex"
         flexDirection="row"
         flexWrap="wrap"
+        gap="1rem"
       >
         <CollectionHoldersButton
           nfts={nfts}
           tokenId={id}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={paperhandsOnly}
+              onChange={e => {
+                setPaperhandsOnly(e.target.checked);
+              }}
+            />
+          }
+          label="Paperhands Only"
         />
       </Box>
       <NftFilter properties={properties} onChange={filters => setSelectedAttributes(filters)}></NftFilter>
