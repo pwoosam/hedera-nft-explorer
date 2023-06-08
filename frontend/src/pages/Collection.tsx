@@ -9,6 +9,8 @@ import { NftFilter } from "../components/nfts/nft-filter";
 import { NftSquare } from "../components/nfts/nft-square";
 import { actions } from "../store";
 import { wellKnownAccounts } from "../utils";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Padding } from "@mui/icons-material";
 
 export const Collection = () => {
   const [properties, setProperties] = useState<Map<string, string[]>>(new Map());
@@ -16,12 +18,15 @@ export const Collection = () => {
   const [paperhandsOnly, setPaperhandsOnly] = useState<boolean>(false);
   const [err, setErr] = useState('');
   const [selectedAttributes, setSelectedAttributes] = useState<Map<string, string[]>>(new Map());
+  const [searchSerial, setSearchSerial] = useState('');
   const dispatch = useDispatch();
 
   const params = useParams<{ id?: string }>();
   const id = params.id ? params.id : "0.0.994239";
   const idRef = useRef(id);
 
+  const theme = useTheme();
+ 
   useEffect(() => {
     idRef.current = id;
   }, [id]);
@@ -69,7 +74,6 @@ export const Collection = () => {
 
   const nftsFiltered = useMemo(() => {
     const anyFiltersSelected = Array.from(selectedAttributes).some(o => o[1].length > 0);
-
     let nftsFiltered = nfts.filter((o) => {
       let shouldShowNft = true;
       if (anyFiltersSelected) {
@@ -98,8 +102,11 @@ export const Collection = () => {
       nftsFiltered = nftsFiltered.filter(o => o.spender === wellKnownAccounts["Zuse Secondary"]);
     }
 
+    if(searchSerial){
+      nftsFiltered = nftsFiltered.filter(nft => String(nft.serial_number).includes(searchSerial))
+    }
     return nftsFiltered;
-  }, [nfts, selectedAttributes, paperhandsOnly]);
+  }, [nfts, selectedAttributes, paperhandsOnly, searchSerial]);
 
   const itemsPerPage = 12;
   const pages = Math.ceil(nftsFiltered.length / itemsPerPage);
@@ -137,6 +144,11 @@ export const Collection = () => {
   const startIndex = itemsPerPage * (currentPage - 1);
   const endIndex = startIndex + itemsPerPage;
 
+  const serialSearcher = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    setSearchSerial(value);
+  }
+
   return (
     <Stack spacing={1}>
       <Snackbar
@@ -150,6 +162,28 @@ export const Collection = () => {
           {err}
         </Alert>
       </Snackbar>
+      <Box
+        display="flex">
+      <TextField
+            placeholder="Serial Number"
+            type="text"
+            autoCapitalize="off"
+            autoComplete="off"
+            autoCorrect="off"
+            value={searchSerial}
+            onChange={serialSearcher}
+            sx={{
+              borderRadius: "4px",
+              backgroundColor: alpha(theme.palette.common.white, 0.15),
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.common.white, 0.25),
+              },
+              '& fieldset': {
+                borderWidth: 0,
+              },
+            }}
+          />
+      </Box>
       <Box
         display="flex"
         flexDirection="row"
@@ -190,7 +224,7 @@ export const Collection = () => {
       <Box
         display="flex"
         flexDirection="row"
-        alignItems="center"
+        alignItems="center"     
       >
         <Pagination
           count={pages}
