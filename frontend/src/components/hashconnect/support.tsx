@@ -5,11 +5,10 @@ import { useSelector } from "react-redux";
 import { getSigner, hc } from "./hashconnect-client";
 import { AppStore } from "../../store";
 import { Hbar, HbarUnit, TransferTransaction } from "@hashgraph/sdk";
-import { getAccountIdFromDomain } from "../../services/domain-service";
+// Unused for now due to the state of .hbar domains
+// import { getAccountIdFromDomain } from "../../services/domain-service";
 import CoffeeIcon from '@mui/icons-material/Coffee';
 import { SupportProgress } from "./support-progress";
-
-const devDomain = 'dev.hbar';
 
 const SupportModal = (props: {
   open: boolean,
@@ -47,7 +46,7 @@ const SupportModal = (props: {
         <List disablePadding>
           <ListItem disableGutters disablePadding>
             <ListItemText>
-              1. Send HBAR to <code>{devDomain}</code>
+              1. Send HBAR to <b>0.0.1005415</b>
             </ListItemText>
           </ListItem>
           <ListItem disableGutters disablePadding>
@@ -90,7 +89,7 @@ const SupportModal = (props: {
                             <InputAdornment position="end">
                               <IconButton
                                 onClick={async () => {
-                                  const devAccId = await getAccountIdFromDomain(devDomain).catch(() => { });
+                                  const devAccId = '0.0.1005415';
                                   if (devAccId) {
                                     const signer = await getSigner();
                                     const trans = await new TransferTransaction()
