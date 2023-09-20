@@ -1,7 +1,6 @@
 import { Box, LinearProgress, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { getThisMonthsIncome } from "../../api-clients/hedera-mirror-node-api-helper";
-// import { getAccountIdFromDomain } from "../../services/domain-service";
 
 let p = -1;
 const goal = 3000;
