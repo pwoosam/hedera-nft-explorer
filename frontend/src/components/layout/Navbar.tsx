@@ -4,7 +4,7 @@ import { alpha, Theme, useTheme } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
 import { actions, AppStore } from "../../store";
 import { getIdType, IdType } from "../../services/id-identifier";
-// import { getAccountIdFromDomain } from "../../services/domain-service";
+import { getAccountIdFromDomain } from "../../services/domain-service";
 import { SupportButton } from "../hashconnect/support";
 import { SupportProgress } from "../hashconnect/support-progress";
 import { getNftInfo } from "../../api-clients/hedera-mirror-node-api-helper";
@@ -50,8 +50,10 @@ export const Navbar = () => {
             } else if (type === IdType.ACCOUNT) {
               navigate(`/account/${searchQuery}`);
             } else if (type === IdType.DOMAIN) {
-              const accId = '0.0.1005415';
-              navigate(`/account/${accId}`);
+              const accId = await getAccountIdFromDomain(searchQuery);
+              if (accId) {
+                navigate(`/account/${accId}`);
+              }
             }
           }}>
           <TextField
