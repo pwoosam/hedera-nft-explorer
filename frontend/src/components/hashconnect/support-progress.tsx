@@ -1,7 +1,6 @@
 import { Box, LinearProgress, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { getThisMonthsIncome } from "../../api-clients/hedera-mirror-node-api-helper";
-import { getAccountIdFromDomain } from "../../services/domain-service";
 
 let p = -1;
 const goal = 3000;
@@ -18,21 +17,19 @@ export const SupportProgress = (props: {
 
   const updateAmount = useMemo(() => {
     return async () => {
-      const accId = await getAccountIdFromDomain('dev.hbar');
-      if (accId) {
-        const transactions = await getThisMonthsIncome(accId);
-        const incomeAmounts = transactions.flatMap(t => t.transfers?.filter(ts => ts.account === accId && ts.amount > 0).map(o => o.amount));
-        let accumulatorInTinybars = 0;
-        for (const incomeAmount of incomeAmounts) {
-          if (incomeAmount !== undefined) {
-            accumulatorInTinybars += incomeAmount;
-          }
+      const accId = '0.0.1005415';
+      const transactions = await getThisMonthsIncome(accId);
+      const incomeAmounts = transactions.flatMap(t => t.transfers?.filter(ts => ts.account === accId && ts.amount > 0).map(o => o.amount));
+      let accumulatorInTinybars = 0;
+      for (const incomeAmount of incomeAmounts) {
+        if (incomeAmount !== undefined) {
+          accumulatorInTinybars += incomeAmount;
         }
-        
-        const hbarsNum = accumulatorInTinybars / 100_000_000;
-        setAmount(hbarsNum);
-        p = hbarsNum;
       }
+      
+      const hbarsNum = accumulatorInTinybars / 100_000_000;
+      setAmount(hbarsNum);
+      p = hbarsNum;
     };
   }, []);
 
