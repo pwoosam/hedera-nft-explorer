@@ -79,7 +79,6 @@ export const Navbar = () => {
             }}
             InputProps={{
               sx: {
-                borderRadius: theme.shape.borderRadius,
                 borderWidth: '0px',
                 color: theme.palette.common.white,
               }
