@@ -10,7 +10,7 @@ import { NftSquare } from "../components/nfts/nft-square";
 import { actions } from "../store";
 import { wellKnownAccounts } from "../utils";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Padding } from "@mui/icons-material";
+// import { Padding } from "@mui/icons-material";
 
 export const Collection = () => {
   const [properties, setProperties] = useState<Map<string, string[]>>(new Map());
