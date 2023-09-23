@@ -1,6 +1,25 @@
-import { Box, Typography } from "@mui/material";
-import { useMemo } from "react";
+// import { Typography } from "@mui/material";
+import { useMemo, Suspense } from "react";
 import { fromIpfsIdToUrl, fromIpfsProtocolToUrl } from "../../api-clients/hedera-mirror-node-api-helper";
+import { useLoader, Canvas } from "@react-three/fiber";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { OrbitControls, useProgress, Html } from "@react-three/drei";
+
+
+const Model = () => {
+  const gltf = useLoader(GLTFLoader, "/SrirachaV2.glb");
+  return (
+    <>
+      <primitive object={gltf.scene} scale={[30, 30, 30]} dispose={null} />
+    </>
+  );
+};
+
+function Loader() {
+  const { progress } = useProgress();
+  return <Html center>{progress}% loaded</Html>
+}
+
 
 const isVideoMetadata = (metadataObj?: { type?: string }) => {
   if (metadataObj?.type && typeof metadataObj.type === 'string') {
@@ -93,24 +112,13 @@ export const IpfsMedia = (props: {
         ></video>
       ) : (
         srcUrl.includes('.glb') ? (
-          <Box
-            width={size}
-            height={size}
-            px={2}
-            sx={{
-              marginTop: "auto",
-              marginBottom: "auto",
-              justifyContent: "center",
-            }}
-            display="flex"
-            alignItems="center"
-          >
-            <Typography
-              variant="h5"
-            >
-              .gbl not supported
-            </Typography>
-          </Box>
+          <Canvas style={{width: '300px', height: '300px'}}>
+            <Suspense fallback={<Loader />}>
+              <ambientLight intensity={1} />
+              <OrbitControls />
+              <Model />
+            </Suspense>
+          </Canvas>
           // <model-viewer
           //   width={size}
           //   height={size}
@@ -119,6 +127,7 @@ export const IpfsMedia = (props: {
           //   className="img-contain"
           //   autoplay
           // ></model-viewer>
+          // <Typography>`${srcUrl}`</Typography>
         ) : (
           <img
             width={size}
