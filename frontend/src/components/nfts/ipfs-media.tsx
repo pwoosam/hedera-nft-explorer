@@ -1,4 +1,4 @@
-// import { Typography } from "@mui/material";
+// import { Box } from "@mui/material";
 import { useMemo, Suspense } from "react";
 import { fromIpfsIdToUrl, fromIpfsProtocolToUrl } from "../../api-clients/hedera-mirror-node-api-helper";
 import { useLoader, Canvas } from "@react-three/fiber";
@@ -7,17 +7,17 @@ import { OrbitControls, useProgress, Html } from "@react-three/drei";
 
 
 const Model = () => {
-  const gltf = useLoader(GLTFLoader, "/SrirachaV2.glb");
+  const gltf = useLoader(GLTFLoader, "/cube.glb");
   return (
     <>
-      <primitive object={gltf.scene} scale={[30, 30, 30]} dispose={null} />
+      <primitive object={gltf.scene} scale={[1, 1, 1]} dispose={null} />
     </>
   );
 };
 
 function Loader() {
   const { progress } = useProgress();
-  return <Html center>{progress}% loaded</Html>
+  return <Html center>{progress} % loaded</Html>
 }
 
 
@@ -112,10 +112,10 @@ export const IpfsMedia = (props: {
         ></video>
       ) : (
         srcUrl.includes('.glb') ? (
-          <Canvas style={{width: '300px', height: '300px'}}>
+          <Canvas style={{width: '100%', height: '100%'}}>
             <Suspense fallback={<Loader />}>
               <ambientLight intensity={1} />
-              <OrbitControls />
+              <OrbitControls autoRotate={true}/>
               <Model />
             </Suspense>
           </Canvas>
