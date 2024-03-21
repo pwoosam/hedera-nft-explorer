@@ -1,6 +1,5 @@
 import { TokenInfoType } from "../api-clients/hedera-mirror-node-api-client";
 import { client } from "../api-clients/hedera-mirror-node-api-helper"
-import { getDomainSuffixes } from "./domain-service";
 
 export enum IdType {
   ACCOUNT = 'account',
@@ -21,8 +20,7 @@ export const getIdType = async (id: string): Promise<IdType> => {
     sn = Number.parseInt(idParts[1]);
   }
 
-  const domainSuffixes = await getDomainSuffixes();
-  if (domainSuffixes.some(suffix => id.endsWith(suffix))) {
+  if (Array.from(id).reduce((acc, c) => c === '.' ? ++acc : acc, 0) === 1) {
     return IdType.DOMAIN;
   }
 

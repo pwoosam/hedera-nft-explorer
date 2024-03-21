@@ -1,66 +1,23 @@
-import { HashConnect, HashConnectTypes, MessageTypes } from "hashconnect";
+import { HashConnect } from "hashconnect";
 import { useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { actions } from "../../store";
+import { LedgerId, Transaction } from "@hashgraph/sdk";
 
-const env = "mainnet";
-
-export const hc = new HashConnect();
-const getPairingData = () => {
-  if (hc.hcData.pairingData.length > 0) {
-    return hc.hcData.pairingData[hc.hcData.pairingData.length - 1];
-  }
-}
+export const hc = new HashConnect(LedgerId.MAINNET, "03182f28980fc53e57d43b0af01fc044", {
+  name: "NFT Explorer",
+  description: "A Hedera NFT Explorer by pwoosam",
+  icons: [window.location.origin + "/logo192.png"],
+  url: window.location.origin
+});
 
 export const hcInitPromise = new Promise(async (resolve) => {
-  const appMetadata: HashConnectTypes.AppMetadata = {
-    name: "NFT Explorer",
-    description: "A Hedera NFT Explorer by pwoosam",
-    icon: window.location.origin + "/logo192.png",
-    url: window.location.origin
-  };
-  const initResult = await hc.init(appMetadata, env, true);
+  const initResult = await hc.init();
   resolve(initResult);
 });
 
-export const getProvider = async () => {
-  await hcInitPromise;
-  const accId = getPairingData()?.accountIds[0];
-  const topic = getPairingData()?.topic;
-  if (!accId || !topic) {
-    throw new Error("No paired account");
-  }
-
-  const provider = hc.getProvider(env, topic, accId);
-  return provider;
-}
-
-export const getSigner = async () => {
-  const provider = await getProvider();
-  const signer = hc.getSigner(provider);
-  return signer;
-}
-
-export const sendTransaction = async (trans: Uint8Array, return_trans: boolean = false, hideNfts: boolean = false) => {
-  await hcInitPromise;
-
-  const pairingData = getPairingData();
-  if (!pairingData) {
-    throw new Error("Pairing data is not set");
-  }
-
-  const transaction: MessageTypes.Transaction = {
-    topic: pairingData.topic,
-    byteArray: trans,
-
-    metadata: {
-      accountToSign: pairingData.accountIds[pairingData.accountIds.length - 1],
-      returnTransaction: return_trans,
-      hideNft: hideNfts
-    }
-  };
-
-  const result = await hc.sendTransaction(pairingData.topic, transaction);
+export const sendTransaction = async (trans: Transaction) => {
+  const result = await hc.sendTransaction(hc.connectedAccountIds[0], trans as any);
   return result;
 }
 
@@ -68,9 +25,9 @@ export const HashConnectClient = () => {
   const dispatch = useDispatch();
   const syncWithHashConnect = useMemo(() => {
     return () => {
-      const accId = getPairingData()?.accountIds[0];
+      const accId = hc.connectedAccountIds[0];
       if (accId) {
-        dispatch(actions.hashconnect.setAccountId(accId));
+        dispatch(actions.hashconnect.setAccountId(accId.toString()));
         dispatch(actions.hashconnect.setIsConnected(true));
       } else {
         dispatch(actions.hashconnect.setAccountId(''));

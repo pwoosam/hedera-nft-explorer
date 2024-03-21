@@ -2,9 +2,9 @@ import { CopyAll, GitHub, Send } from "@mui/icons-material";
 import { Box, Button, ButtonProps, IconButton, InputAdornment, List, ListItem, ListItemText, Modal, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { getSigner, hc } from "./hashconnect-client";
+import { hc } from "./hashconnect-client";
 import { AppStore } from "../../store";
-import { Hbar, HbarUnit, TransferTransaction } from "@hashgraph/sdk";
+import { Hbar, HbarUnit, Signer, TransferTransaction } from "@hashgraph/sdk";
 // Unused for now due to the state of .hbar domains
 // import { getAccountIdFromDomain } from "../../services/domain-service";
 import CoffeeIcon from '@mui/icons-material/Coffee';
@@ -91,7 +91,7 @@ const SupportModal = (props: {
                                 onClick={async () => {
                                   const devAccId = '0.0.1005415';
                                   if (devAccId) {
-                                    const signer = await getSigner();
+                                    const signer = hc.getSigner(hc.connectedAccountIds[0]) as any as Signer;
                                     const trans = await new TransferTransaction()
                                       .addHbarTransfer(pairedAccId, Hbar.from(-amount, HbarUnit.Hbar))
                                       .addHbarTransfer(devAccId, Hbar.from(amount, HbarUnit.Hbar))
@@ -114,7 +114,7 @@ const SupportModal = (props: {
                   <Button
                     variant="contained"
                     onClick={() => {
-                      hc.disconnect(hc.hcData.topic);
+                      hc.disconnect();
                     }}
                     color="error"
                   >
@@ -126,7 +126,7 @@ const SupportModal = (props: {
                   <Button
                     variant="contained"
                     onClick={() => {
-                      hc.connectToLocalWallet();
+                      hc.openPairingModal();
                     }}
                     sx={{
                       marginBottom: 2
@@ -138,14 +138,14 @@ const SupportModal = (props: {
                     fullWidth
                     label="Pairing String"
                     variant="outlined"
-                    value={hc.hcData.pairingString}
+                    value={hc.pairingString}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
                             aria-label="Copy Pairing String"
                             onClick={() => {
-                              navigator.clipboard.writeText(hc.hcData.pairingString);
+                              navigator.clipboard.writeText(hc.pairingString!);
                             }}
                             edge="end"
                           >

@@ -133,7 +133,7 @@ checkBrowsers(paths.appPath, isInteractive)
 
     ['SIGINT', 'SIGTERM'].forEach(function (sig) {
       process.on(sig, function () {
-        devServer.close();
+        devServer.stop();
         process.exit();
       });
     });
